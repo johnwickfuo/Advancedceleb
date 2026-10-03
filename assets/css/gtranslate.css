@@ -1,0 +1,128 @@
+/* --- Google Translate Cleanup --- */
+.google_translate_element, .goog-logo-link {
+    /* Targets the new class for the element */
+    display: none !important;
+    visibility: hidden !important;
+}
+.goog-te-banner-frame.skiptranslate, .goog-te-banner-frame {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    line-height: 0 !important;
+}
+
+/* --- Dropdown Trigger (Targets class) --- */
+.lang-trigger {
+    background: none;
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    transition: color .2s;
+}
+
+/* --- Dropdown Trigger Hover State (Targets class) --- */
+.lang-trigger:hover {
+    color: #ffc107;
+}
+
+.icon {
+    margin-right: 8px;
+    font-size: 18px;
+}
+.open .arrow {
+    transform: rotate(180deg);
+}
+.language-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* --- Dropdown Container (Targets class) --- */
+.language-dropdown {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 10px; 
+    border-radius: 12px;
+    box-shadow: 0 10px 70px rgba(0,0,0,.1);
+    padding: 18px;
+    min-width: 320px;
+    z-index: 1000;
+    background-color: #fff;
+    color: #1e385b;
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+/* --- Sticky Header Positioning (Targets class) --- */
+/* Note: This assumes .main-header.fixed-header is a wrapper for your entire header */
+.main-header.fixed-header .language-dropdown {
+    position: fixed !important;
+    top: 80px !important;
+    right: 40px !important;
+    z-index: 1001 !important;
+}
+
+.language-list { /* Targets the list class */
+    list-style: none;
+    padding: .313rem .625rem;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    border-radius: 10px;
+    padding-left: 0;
+    padding-right: 0;
+}
+.lang-selector {
+    display: block;
+    text-decoration: none;
+    font-size: 14px;
+    color: #1e385b;
+    transition: color .2s;
+    padding: .313rem .625rem;
+    line-height: 1.4;
+}
+.lang-selector:hover {
+    font-weight: 600;
+    background: #eef2f9;
+    color: #1e385b;
+    border-radius: 10px;
+}
+iframe.skiptranslate {
+    display: none !important;
+}
+body {
+    top: 0 !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* --- Media Queries (Targets class) --- */
+@media(max-width: 600px) {
+    .language-dropdown {
+        right: 0;
+        transform: translateX(0%);
+        top: 48px;
+        min-width: 200px;
+        max-width: calc(100vw - 20px);
+        box-sizing: border-box;
+    }
+    .language-list {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+@media (max-width: 768px) {
+    .main-header.fixed-header .language-dropdown {
+        position: absolute !important;
+        top: 48px !important;
+        right: 0px !important;
+    }
+}
+
+.btn-skew {transform: skewX(-15deg);padding: 10px 30px !important;border-radius: 5px !important;font-size: 13px;font-weight: 800 !important;transition: transform 0.3s ease, box-shadow 0.3s ease;font-family: 'Work Sans', sans-serif !important;display: inline-block;border: none;}.btn-skew-text {transform: skewX(15deg);display: inline-block;transition: transform 0.3s ease;}.btn-skew:hover {transform: skewX(15deg) scale(1.05);box-shadow: 0 5px 15px rgba(0,0,0,0.2);}.btn-skew:hover .btn-skew-text {transform: skewX(-15deg);}

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350" width="100%" height="100%">
+  <defs>
+    <!-- Radial Gold Gradient -->
+    <radialGradient id="goldGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c29b57" stop-opacity="0.18" />
+      <stop offset="70%" stop-color="#c29b57" stop-opacity="0.06" />
+      <stop offset="100%" stop-color="#c29b57" stop-opacity="0" />
+    </radialGradient>
+    
+    <!-- Pattern Definitions -->
+    <pattern id="securityWaves" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M0 20 Q 10 5, 20 20 T 40 20" fill="none" stroke="#c29b57" stroke-width="0.75" stroke-opacity="0.25" />
+      <path d="M0 10 Q 10 -5, 20 10 T 40 10" fill="none" stroke="#c29b57" stroke-width="0.5" stroke-opacity="0.15" />
+      <path d="M0 30 Q 10 15, 20 30 T 40 30" fill="none" stroke="#c29b57" stroke-width="0.5" stroke-opacity="0.15" />
+    </pattern>
+
+    <pattern id="fineGrid" width="16" height="16" patternUnits="userSpaceOnUse">
+      <path d="M 16 0 L 0 0 0 16" fill="none" stroke="#0f172a" stroke-width="0.5" stroke-opacity="0.04" />
+    </pattern>
+  </defs>
+
+  <!-- Background Base Tint & Grids -->
+  <rect width="800" height="350" fill="url(#fineGrid)" />
+  <rect width="800" height="350" fill="url(#securityWaves)" />
+  <rect width="800" height="350" fill="url(#goldGlow)" />
+
+  <!-- Outer Security Border Filigree -->
+  <rect x="8" y="8" width="784" height="334" rx="10" fill="none" stroke="#c29b57" stroke-width="0.75" stroke-opacity="0.3" stroke-dasharray="6,3" />
+  <rect x="14" y="14" width="772" height="322" rx="8" fill="none" stroke="#c29b57" stroke-width="0.5" stroke-opacity="0.2" />
+
+  <!-- Corner Ornamental Rosettes -->
+  <g stroke="#c29b57" stroke-width="0.75" stroke-opacity="0.35" fill="none">
+    <!-- Top-Left -->
+    <circle cx="28" cy="28" r="12" />
+    <circle cx="28" cy="28" r="7" />
+    <path d="M28 12 L28 44 M12 28 L44 28 M16 16 L40 40 M16 40 L40 16" />
+    
+    <!-- Top-Right -->
+    <circle cx="772" cy="28" r="12" />
+    <circle cx="772" cy="28" r="7" />
+    <path d="M772 12 L772 44 M756 28 L788 28 M760 16 L784 40 M760 40 L784 16" />
+
+    <!-- Bottom-Left -->
+    <circle cx="28" cy="322" r="12" />
+    <circle cx="28" cy="322" r="7" />
+    <path d="M28 306 L28 338 M12 322 L44 322 M16 310 L40 334 M16 334 L40 310" />
+
+    <!-- Bottom-Right -->
+    <circle cx="772" cy="322" r="12" />
+    <circle cx="772" cy="322" r="7" />
+    <path d="M772 306 L772 338 M756 322 L788 322 M760 310 L784 334 M760 334 L784 310" />
+  </g>
+
+  <!-- Central VIP Luxury Watermark Seal -->
+  <g transform="translate(400, 175)" opacity="0.85">
+    <!-- Concentric Guilloche Rings -->
+    <circle cx="0" cy="0" r="130" fill="none" stroke="#c29b57" stroke-width="0.75" stroke-opacity="0.2" stroke-dasharray="4,2" />
+    <circle cx="0" cy="0" r="115" fill="none" stroke="#c29b57" stroke-width="1.2" stroke-opacity="0.3" />
+    <circle cx="0" cy="0" r="105" fill="none" stroke="#c29b57" stroke-width="0.6" stroke-opacity="0.2" />
+    <circle cx="0" cy="0" r="85" fill="none" stroke="#c29b57" stroke-width="0.8" stroke-opacity="0.25" stroke-dasharray="2,2" />
+    <circle cx="0" cy="0" r="65" fill="none" stroke="#c29b57" stroke-width="1" stroke-opacity="0.3" />
+
+    <!-- Radiating Ray Burst -->
+    <g stroke="#c29b57" stroke-width="0.6" stroke-opacity="0.2">
+      <line x1="0" y1="-125" x2="0" y2="-90" />
+      <line x1="0" y1="125" x2="0" y2="90" />
+      <line x1="-125" y1="0" x2="-90" y2="0" />
+      <line x1="125" y1="0" x2="90" y2="0" />
+      <line x1="-88" y1="-88" x2="-65" y2="-65" />
+      <line x1="88" y1="88" x2="65" y2="65" />
+      <line x1="-88" y1="88" x2="-65" y2="65" />
+      <line x1="88" y1="-88" x2="65" y2="-65" />
+      <line x1="-48" y1="-115" x2="-35" y2="-85" />
+      <line x1="48" y1="-115" x2="35" y2="-85" />
+      <line x1="-48" y1="115" x2="-35" y2="85" />
+      <line x1="48" y1="115" x2="35" y2="85" />
+      <line x1="-115" y1="-48" x2="-85" y2="-35" />
+      <line x1="115" y1="-48" x2="85" y2="-35" />
+      <line x1="-115" y1="48" x2="-85" y2="35" />
+      <line x1="115" y1="48" x2="85" y2="35" />
+    </g>
+
+    <!-- Star Emblem Centerpiece -->
+    <g fill="#c29b57" fill-opacity="0.12">
+      <path d="M0 -35 L10 -10 L35 0 L10 10 L0 35 L-10 10 L-35 0 L-10 -10 Z" />
+    </g>
+    <g stroke="#c29b57" stroke-width="1" stroke-opacity="0.4" fill="none">
+      <path d="M0 -35 L10 -10 L35 0 L10 10 L0 35 L-10 10 L-35 0 L-10 -10 Z" />
+    </g>
+
+    <!-- Watermark Text Center -->
+    <text x="0" y="8" text-anchor="middle" font-family="'Playfair Display', Georgia, serif" font-weight="900" font-size="30" fill="#c29b57" fill-opacity="0.22" letter-spacing="6">VIP</text>
+    
+    <!-- Micro Circular Security Text Rings -->
+    <path id="textCircleTop" d="M -92 0 A 92 92 0 0 1 92 0" fill="none" />
+    <path id="textCircleBottom" d="M 92 0 A 92 92 0 0 1 -92 0" fill="none" />
+    
+    <text font-family="'Montserrat', 'Arial', sans-serif" font-size="6.5" font-weight="700" fill="#c29b57" fill-opacity="0.32" letter-spacing="3.2">
+      <textPath href="#textCircleTop" startOffset="50%" text-anchor="middle">
+        ★ OFFICIAL VERIFIED ACCESS PASS ★
+      </textPath>
+    </text>
+    <text font-family="'Montserrat', 'Arial', sans-serif" font-size="6.5" font-weight="700" fill="#c29b57" fill-opacity="0.32" letter-spacing="3.2">
+      <textPath href="#textCircleBottom" startOffset="50%" text-anchor="middle">
+        ★ VIP BOOKING CONCIERGE PLATFORM ★
+      </textPath>
+    </text>
+  </g>
+
+  <!-- Side Perforation Line Indicator -->
+  <line x1="600" y1="20" x2="600" y2="330" stroke="#c29b57" stroke-width="1" stroke-opacity="0.2" stroke-dasharray="5,5" />
+</svg>

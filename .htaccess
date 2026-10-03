@@ -1,0 +1,20 @@
+# Custom 404 Error Page
+ErrorDocument 404 /404.php
+
+# Prevent Directory Listing
+Options -Indexes
+
+# Enable Rewriting
+RewriteEngine On
+
+# Redirect if someone tries to access 404.php directly
+# RewriteCond %{THE_REQUEST} /404\.php [NC]
+# RewriteRule ^404\.php$ / [R=301,L]
+
+# Example Rewrite for subdirectories if needed
+# RewriteBase /
+
+# Ensure 404 works even if ErrorDocument fails in some environments
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . 404.php [L]
