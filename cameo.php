@@ -20,7 +20,6 @@ $celebrities = [];
 try {
     $stmt = $pdo->query("SELECT id, name, description, profile_picture, cameo_price
                          FROM celebrities
-                         WHERE cameo_enabled = 1 AND cameo_price > 0
                          ORDER BY name ASC");
     $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
@@ -58,14 +57,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
         $error_msg = 'Choose an available celebrity and provide your name, valid email, international WhatsApp number and script (maximum 5,000 characters).';
     } else {
         try {
-            // Never trust a browser-supplied price: fetch the current, enabled cameo price.
+            // Never trust a browser-supplied price; all talent has a cameo button,
+            // but checkout requires an admin-configured positive video price.
             $stmt = $pdo->prepare("SELECT id, name, cameo_price FROM celebrities
-                                   WHERE id = ? AND cameo_enabled = 1 AND cameo_price > 0");
+                                   WHERE id = ? AND cameo_price > 0");
             $stmt->execute([$selected_id]);
             $celebrity = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$celebrity) {
-                $error_msg = 'That celebrity is not currently accepting cameo video requests.';
+                $error_msg = 'This celebrity’s cameo price has not yet been set. Please contact support or choose another celebrity.';
             } else {
                 $reference = 'CAM-' . strtoupper(bin2hex(random_bytes(6)));
                 $whatsapp = '+' . $whatsapp_digits;
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
                 <div class="alert alert-danger" role="alert"><?php echo $h($error_msg); ?></div>
             <?php endif; ?>
             <?php if (!$celebrities): ?>
-                <div class="alert alert-info">No cameo video services are currently available. Please check back later.</div>
+                <div class="alert alert-info">No celebrities are available at the moment. Please check back later.</div>
                 <a href="performers.php" class="btn btn-outline-secondary">Back to Celebrity Roster</a>
             <?php else: ?>
                 <?php if (!$has_payment_options): ?>
@@ -189,7 +189,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
                              onerror="this.src='assets/img/perf_default.jpg';">
                         <div>
                             <div class="fw-bold fs-5"><?php echo $h($selected_celebrity['name']); ?></div>
-                            <div class="cameo-price"><?php echo format_currency($selected_celebrity['cameo_price']); ?></div>
+                            <div class="cameo-price"><?php echo ((float)($selected_celebrity['cameo_price'] ?? 0) > 0) ? $h(format_currency($selected_celebrity['cameo_price'])) : 'Cameo price not yet set'; ?></div>
                         </div>
                     </div>
                 <?php endif; ?>
@@ -199,16 +199,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
                     <div class="mb-4">
                         <label for="celebrity_id" class="form-label">Choose Celebrity</label>
                         <select name="celebrity_id" id="celebrity_id" class="form-select" required>
-                            <option value="">-- Select available talent --</option>
+                            <option value="">-- Select a celebrity --</option>
                             <?php foreach ($celebrities as $cel): ?>
+                                <?php $is_priced = isset($cel['cameo_price']) && (float)$cel['cameo_price'] > 0; ?>
+                                <?php $price_label = $is_priced ? format_currency($cel['cameo_price']) : 'Price not yet set'; ?>
                                 <option value="<?php echo (int)$cel['id']; ?>"
-                                    data-price="<?php echo $h(format_currency($cel['cameo_price'])); ?>"
+                                    data-price="<?php echo $h($price_label); ?>"
+                                    data-priced="<?php echo $is_priced ? '1' : '0'; ?>"
                                     <?php echo $selected_id === (int)$cel['id'] ? 'selected' : ''; ?>>
-                                    <?php echo $h($cel['name']); ?> — <?php echo $h(format_currency($cel['cameo_price'])); ?>
+                                    <?php echo $h($cel['name']); ?> — <?php echo $h($price_label); ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>
-                        <div class="small mt-2">Cameo price: <strong id="cameo_price_display" class="text-danger"><?php echo $selected_celebrity ? $h(format_currency($selected_celebrity['cameo_price'])) : 'Choose a celebrity'; ?></strong></div>
+                        <div class="small mt-2">Cameo price: <strong id="cameo_price_display" class="text-danger"><?php echo $selected_celebrity ? (((float)($selected_celebrity['cameo_price'] ?? 0) > 0) ? $h(format_currency($selected_celebrity['cameo_price'])) : 'Price not yet set') : 'Choose a celebrity'; ?></strong></div>
+                        <div id="cameo_price_notice" class="small text-muted mt-1">All celebrities can be requested. Checkout requires the admin to configure their individual cameo price.</div>
                     </div>
                     <div class="mb-4">
                         <label for="cameo_script" class="form-label">Words you want the celebrity to say</label>
@@ -236,8 +240,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
                     <div class="small text-muted mb-3">
                         When you continue, your request is created and you are directed to the same payment options used for celebrity bookings. Payment proof is reviewed before fulfillment.
                     </div>
-                    <button type="submit" name="submit_cameo" class="btn btn-gold w-100 py-3 fs-5 fw-bold"
-                        <?php echo $has_payment_options ? '' : 'disabled'; ?>>
+                    <button type="submit" id="submit_cameo" name="submit_cameo" class="btn btn-gold w-100 py-3 fs-5 fw-bold"
+                        <?php echo ($has_payment_options && $selected_celebrity && (float)($selected_celebrity['cameo_price'] ?? 0) > 0) ? '' : 'disabled'; ?>>
                         Continue to Payment <i class="bi bi-arrow-right ms-2"></i>
                     </button>
                 </form>
@@ -246,10 +250,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_cameo'])) {
     </div>
 </section>
 <script>
-    document.getElementById('celebrity_id')?.addEventListener('change', function () {
-        const option = this.options[this.selectedIndex];
-        document.getElementById('cameo_price_display').textContent = option?.dataset.price || 'Choose a celebrity';
-    });
+    const cameoSelect = document.getElementById('celebrity_id');
+    if (cameoSelect) {
+        const updateCameoPrice = function () {
+            const option = cameoSelect.options[cameoSelect.selectedIndex];
+            document.getElementById('cameo_price_display').textContent = option?.dataset.price || 'Choose a celebrity';
+            const button = document.getElementById('submit_cameo');
+            if (button) {
+                button.disabled = !<?php echo $has_payment_options ? 'true' : 'false'; ?> || option?.dataset.priced !== '1';
+            }
+        };
+        cameoSelect.addEventListener('change', updateCameoPrice);
+        updateCameoPrice();
+    }
 </script>
 <?php include 'footer.php'; ?>
 </body>
