@@ -20,9 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         $name = trim($_POST['name'] ?? '');
         $booking_price = trim($_POST['booking_price'] ?? '');
-        $cameo_price_raw = trim($_POST['cameo_price'] ?? '');
-        $cameo_price = $cameo_price_raw === '' ? null : $cameo_price_raw;
-        $cameo_enabled = isset($_POST['cameo_enabled']) ? 1 : 0;
+        $cameo_price_raw = trim((string)($_POST['cameo_price'] ?? ''));
+        $cameo_price = ($cameo_price_raw === '') ? null : $cameo_price_raw;
         $description = trim($_POST['description'] ?? '');
         $is_featured = isset($_POST['is_featured']) ? 1 : 0;
         $is_verified = isset($_POST['is_verified']) ? 1 : 0;
@@ -40,25 +39,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($name) || empty($booking_price)) {
             $error_msg = "Name and Booking Price are required.";
         } elseif ($cameo_price !== null && (!preg_match('/^[0-9]{1,8}(\.[0-9]{1,2})?$/', $cameo_price) || (float)$cameo_price <= 0)) {
-            $error_msg = "Enter a valid cameo price greater than zero (maximum two decimal places).";
-        } elseif ($cameo_enabled && $cameo_price === null) {
-            $error_msg = "Set a cameo video price before enabling requests.";
+            $error_msg = "Please enter a valid positive cameo video price (up to two decimal places), or leave blank while you set it later.";
         } else {
             try {
                 if ($id > 0) {
                     // Update
                     if ($profile_picture) {
-                        $stmt = $pdo->prepare("UPDATE celebrities SET name=?, booking_price=?, cameo_price=?, cameo_enabled=?, description=?, profile_picture=?, is_featured=?, is_verified=? WHERE id=?");
-                        $stmt->execute([$name, $booking_price, $cameo_price, $cameo_enabled, $description, $profile_picture, $is_featured, $is_verified, $id]);
+                        $stmt = $pdo->prepare("UPDATE celebrities SET name=?, booking_price=?, cameo_price=?, cameo_enabled=1, description=?, profile_picture=?, is_featured=?, is_verified=? WHERE id=?");
+                        $stmt->execute([$name, $booking_price, $cameo_price, $description, $profile_picture, $is_featured, $is_verified, $id]);
                     } else {
-                        $stmt = $pdo->prepare("UPDATE celebrities SET name=?, booking_price=?, cameo_price=?, cameo_enabled=?, description=?, is_featured=?, is_verified=? WHERE id=?");
-                        $stmt->execute([$name, $booking_price, $cameo_price, $cameo_enabled, $description, $is_featured, $is_verified, $id]);
+                        $stmt = $pdo->prepare("UPDATE celebrities SET name=?, booking_price=?, cameo_price=?, cameo_enabled=1, description=?, is_featured=?, is_verified=? WHERE id=?");
+                        $stmt->execute([$name, $booking_price, $cameo_price, $description, $is_featured, $is_verified, $id]);
                     }
                     $success_msg = "Celebrity updated successfully.";
                 } else {
                     // Insert
-                    $stmt = $pdo->prepare("INSERT INTO celebrities (name, booking_price, cameo_price, cameo_enabled, description, profile_picture, is_featured, is_verified) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                    $stmt->execute([$name, $booking_price, $cameo_price, $cameo_enabled, $description, $profile_picture, $is_featured, $is_verified]);
+                    $stmt = $pdo->prepare("INSERT INTO celebrities (name, booking_price, cameo_price, cameo_enabled, description, profile_picture, is_featured, is_verified) VALUES (?, ?, ?, 1, ?, ?, ?, ?)");
+                    $stmt->execute([$name, $booking_price, $cameo_price, $description, $profile_picture, $is_featured, $is_verified]);
                     $success_msg = "Celebrity added successfully.";
                 }
             } catch (PDOException $e) {
@@ -178,7 +175,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tr>
                                     <th class="ps-4">Celebrity</th>
                                     <th>Booking Price</th>
-                                    <th>Cameo Video</th>
+                                    <th>Cameo Price</th>
                                     <th>Status</th>
                                     <th class="text-end pe-4">Actions</th>
                                 </tr>
@@ -203,10 +200,10 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </td>
                                             <td><?php echo format_currency($cel['booking_price']); ?></td>
                                             <td>
-                                                <?php if ((int)$cel['cameo_enabled'] === 1 && (float)$cel['cameo_price'] > 0): ?>
-                                                    <span class="badge bg-success">Enabled</span> <?php echo format_currency($cel['cameo_price']); ?>
+                                                <?php if (isset($cel['cameo_price']) && (float)$cel['cameo_price'] > 0): ?>
+                                                    <?php echo format_currency($cel['cameo_price']); ?>
                                                 <?php else: ?>
-                                                    <span class="text-muted small">Not offered</span>
+                                                    <span class="text-muted small">Set price</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
@@ -215,7 +212,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </td>
                                             <td class="text-end pe-4">
                                                 <div class="btn-action-container">
-                                                    <button class="btn btn-sm btn-outline-secondary" onclick='editCelebrity(<?php echo json_encode($cel); ?>)' title="Edit Celebrity">
+                                                    <button class="btn btn-sm btn-outline-secondary" onclick='editCelebrity(<?php echo htmlspecialchars(json_encode($cel, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="Edit Celebrity">
                                                         <i class="bi bi-pencil"></i>
                                                     </button>
                                                      <form method="post" class="d-inline" onsubmit="confirmAction(event, this, 'Are you sure you want to permanently delete this celebrity performer? This action cannot be undone.');">
@@ -256,7 +253,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         <div>
                                             <div class="fw-bold text-dark fs-5"><?php echo htmlspecialchars($cel['name']); ?></div>
                                             <div class="fw-bold text-gold mt-1"><?php echo format_currency($cel['booking_price']); ?></div>
-                                                    <div class="small text-muted mt-1">Cameo video: <?php echo ((int)$cel['cameo_enabled'] === 1 && (float)$cel['cameo_price'] > 0) ? format_currency($cel['cameo_price']) : 'Not offered'; ?></div>
+                                                    <div class="small text-muted mt-1">Cameo video: <?php echo (isset($cel['cameo_price']) && (float)$cel['cameo_price'] > 0) ? format_currency($cel['cameo_price']) : 'Set price'; ?></div>
                                         </div>
                                         <div class="d-flex flex-column gap-1 align-items-end">
                                             <?php if($cel['is_verified']): ?><span class="badge bg-primary">Verified</span><?php endif; ?>
@@ -266,7 +263,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                             </div>
                             <div class="d-flex justify-content-end gap-2 border-top pt-2 mt-2">
-                                <button class="btn btn-sm btn-outline-secondary" onclick='editCelebrity(<?php echo json_encode($cel); ?>)' title="Edit Celebrity">
+                                <button class="btn btn-sm btn-outline-secondary" onclick='editCelebrity(<?php echo htmlspecialchars(json_encode($cel, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="Edit Celebrity">
                                     <i class="bi bi-pencil me-1"></i>Edit
                                 </button>
                                 <form method="post" class="d-inline" onsubmit="confirmAction(event, this, 'Are you sure you want to permanently delete this celebrity performer? This action cannot be undone.');">
@@ -332,71 +329,9 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
                             <input type="number" step="0.01" class="form-control" name="booking_price" id="cel_price" required>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Cameo Video Price (<?php echo htmlspecialchars($site_settings['currency_symbol'] ?? '
-                            <textarea class="form-control" name="description" id="cel_desc" rows="3"></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Profile Picture</label>
-                            <input type="file" class="form-control" name="profile_picture" accept="image/*">
-                            <small class="text-muted d-block mt-1">Leave empty to keep existing picture when editing.</small>
-                        </div>
-                        
-                        <div class="form-check form-switch mb-2">
-                            <input class="form-check-input" type="checkbox" name="is_verified" id="cel_verified" value="1">
-                            <label class="form-check-label" for="cel_verified">Verified Badge</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="is_featured" id="cel_featured" value="1">
-                            <label class="form-check-label" for="cel_featured">Feature on Homepage</label>
-                        </div>
-                    </div>
-                    <div class="modal-footer border-top-0 pt-0">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary px-4">Save Celebrity</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <script src="../assets/js/bootstrap.bundle.min.js"></script>
-    <script>
-        function resetForm() {
-            document.getElementById('modalTitle').innerText = 'Add Celebrity';
-            document.getElementById('cel_id').value = '0';
-            document.getElementById('cel_name').value = '';
-            document.getElementById('cel_price').value = '';
-            document.getElementById('cel_cameo_price').value = '';
-            document.getElementById('cel_cameo_enabled').checked = false;
-            document.getElementById('cel_desc').value = '';
-            document.getElementById('cel_verified').checked = false;
-            document.getElementById('cel_featured').checked = false;
-        }
-        
-        function editCelebrity(cel) {
-            document.getElementById('modalTitle').innerText = 'Edit Celebrity';
-            document.getElementById('cel_id').value = cel.id;
-            document.getElementById('cel_name').value = cel.name;
-            document.getElementById('cel_price').value = cel.booking_price;
-            document.getElementById('cel_cameo_price').value = cel.cameo_price == null ? '' : cel.cameo_price;
-            document.getElementById('cel_cameo_enabled').checked = Number(cel.cameo_enabled) === 1;
-            document.getElementById('cel_desc').value = cel.description;
-            document.getElementById('cel_verified').checked = cel.is_verified == 1;
-            document.getElementById('cel_featured').checked = cel.is_featured == 1;
-            
-            var modal = new bootstrap.Modal(document.getElementById('celebrityModal'));
-            modal.show();
-        }
-    </script>
-</body>
-</html>
-); ?>)</label>
-                            <input type="number" min="0.01" max="99999999.99" step="0.01" class="form-control" name="cameo_price" id="cel_cameo_price" placeholder="Leave blank if not offered">
-                        </div>
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" name="cameo_enabled" id="cel_cameo_enabled" value="1">
-                            <label class="form-check-label" for="cel_cameo_enabled">Accept Cameo Video Requests</label>
-                            <small class="d-block text-muted">Only enable this for talent whose cameo services you are authorized to offer.</small>
+                            <label class="form-label">Cameo Video Price (<?php echo htmlspecialchars($site_settings['currency_symbol'] ?? '$'); ?>)</label>
+                            <input type="number" step="0.01" min="0.01" max="99999999.99" class="form-control" name="cameo_price" id="cel_cameo_price" placeholder="Set a price for personalized videos">
+                            <small class="text-muted d-block mt-1">Cameo requests appear for all celebrities. A positive price is required before paid checkout.</small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Description / About</label>
@@ -433,6 +368,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('cel_id').value = '0';
             document.getElementById('cel_name').value = '';
             document.getElementById('cel_price').value = '';
+            document.getElementById('cel_cameo_price').value = '';
             document.getElementById('cel_desc').value = '';
             document.getElementById('cel_verified').checked = false;
             document.getElementById('cel_featured').checked = false;
@@ -443,6 +379,7 @@ $celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('cel_id').value = cel.id;
             document.getElementById('cel_name').value = cel.name;
             document.getElementById('cel_price').value = cel.booking_price;
+            document.getElementById('cel_cameo_price').value = cel.cameo_price == null ? '' : cel.cameo_price;
             document.getElementById('cel_desc').value = cel.description;
             document.getElementById('cel_verified').checked = cel.is_verified == 1;
             document.getElementById('cel_featured').checked = cel.is_featured == 1;
