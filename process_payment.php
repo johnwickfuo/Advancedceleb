@@ -89,9 +89,24 @@ try {
         throw new Exception('Missing or invalid booking identification fields.');
     }
     
+    // Confirm that the posted booking ID really belongs to the reference on the payment form.
+    $booking_check = $pdo->prepare("SELECT booking_reference, booking_type, amount, status FROM bookings WHERE id = ? LIMIT 1");
+    $booking_check->execute([$booking_id]);
+    $linked_booking = $booking_check->fetch(PDO::FETCH_ASSOC);
+    if (!$linked_booking || !hash_equals((string)$linked_booking['booking_reference'], (string)$tracking_number)) {
+        throw new Exception('Booking reference does not match the submitted payment.');
+    }
+    if ($linked_booking['status'] === 'Cancelled') {
+        throw new Exception('Payments cannot be submitted for cancelled requests.');
+    }
+
     $amount = filter_var($_POST['amount'], FILTER_VALIDATE_FLOAT);
     if ($amount === false || $amount <= 0) {
         throw new Exception('Invalid payment amount specified.');
+    }
+    if (($linked_booking['booking_type'] ?? 'event') === 'cameo'
+        && abs((float)$linked_booking['amount'] - $amount) >= 0.01) {
+        throw new Exception('The cameo payment amount must match the displayed video price.');
     }
 
     // ===============================================
