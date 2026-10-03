@@ -36,12 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $smtp_config_missing = false;
                     
                     $service_label = ($booking['booking_type'] ?? 'event') === 'cameo' ? 'Cameo Request' : 'Booking';
+                    $service_description = ($booking['booking_type'] ?? 'event') === 'cameo' ? 'cameo video' : 'celebrity booking';
                     if ($status === 'Accepted') {
                         $subj = $service_label . " Accepted - Ref: " . $booking['booking_reference'];
                         $body = "
                             <h2 style='color: #e63946; margin-top: 0;'>Booking Accepted!</h2>
                             <p>Great news, {$booking['user_name']}!</p>
-                            <p>Your booking request for <strong>{$booking['celebrity_name']}</strong> has been <strong>ACCEPTED</strong>.</p>
+                            <p>Your {$service_description} request for <strong>{$booking['celebrity_name']}</strong> has been <strong>ACCEPTED</strong>.</p>
                             <p>Please proceed to track your booking and complete your payment to finalize the arrangement.</p>
                             <p><a href='{$site_settings['site_url']}/payment.php?ref={$booking['booking_reference']}' style='display: inline-block; padding: 10px 20px; background-color: #e63946; color: #fff; border-radius: 6px; font-weight: bold;'>Complete Payment Now</a></p>
                         ";
@@ -50,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $body = "
                             <h2 style='color: #e63946; margin-top: 0;'>Booking Cancelled</h2>
                             <p>Dear {$booking['user_name']},</p>
-                            <p>We regret to inform you that your booking request for <strong>{$booking['celebrity_name']}</strong> has been cancelled.</p>
+                            <p>We regret to inform you that your {$service_description} request for <strong>{$booking['celebrity_name']}</strong> has been cancelled.</p>
                             <p>If you have any questions, please contact our support team.</p>
                         ";
                     }
@@ -224,7 +225,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <?php 
                                                 $badgeClass = 'bg-secondary';
                                                 if($booking['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
-                                                if($booking['status'] == 'Accepted') $badgeClass = 'bg-success';
+                                                if(in_array($booking['status'], ['Accepted', 'Approved', 'Delivered'], true)) $badgeClass = 'bg-success';
                                                 if($booking['status'] == 'Cancelled') $badgeClass = 'bg-danger';
                                                 ?>
                                                 <span class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($booking['status']); ?></span>
@@ -232,7 +233,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </td>
                                             <td class="text-end pe-4 text-nowrap">
                                                 <div class="d-flex justify-content-end align-items-center gap-2">
-                                                    <button class="btn btn-sm btn-light border shadow-sm rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details & Manage Status">
+                                                    <button class="btn btn-sm btn-light border shadow-sm rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details & Manage Status">
                                                         <i class="bi bi-eye text-primary fs-6"></i>
                                                     </button>
                                                     <form method="post" class="m-0" onsubmit="confirmDelete(event, this);">
@@ -280,7 +281,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <?php 
                                                 $badgeClass = 'bg-secondary';
                                                 if($booking['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
-                                                if($booking['status'] == 'Accepted') $badgeClass = 'bg-success';
+                                                if(in_array($booking['status'], ['Accepted', 'Approved', 'Delivered'], true)) $badgeClass = 'bg-success';
                                                 if($booking['status'] == 'Cancelled') $badgeClass = 'bg-danger';
                                                 ?>
                                                 <span class="badge <?php echo $badgeClass; ?> px-2 py-1"><?php echo htmlspecialchars($booking['status']); ?></span>
@@ -307,7 +308,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         
                                         <!-- Actions -->
                                         <div class="d-flex justify-content-between align-items-center mt-2">
-                                            <button class="btn btn-light border shadow-sm rounded-pill px-3 py-2 d-flex align-items-center justify-content-center flex-grow-1 me-2 fw-semibold text-primary" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details">
+                                            <button class="btn btn-light border shadow-sm rounded-pill px-3 py-2 d-flex align-items-center justify-content-center flex-grow-1 me-2 fw-semibold text-primary" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details">
                                                 <i class="bi bi-eye me-2"></i> View Details & Status
                                             </button>
                                             <form method="post" class="m-0" onsubmit="confirmDelete(event, this);">
@@ -422,6 +423,9 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" onclick="submitModalStatus('Accepted', 'success')">
                             <i class="bi bi-check-lg me-1"></i> Accept
                         </button>
+                        <button type="button" id="v_mark_delivered" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" style="display:none;" onclick="submitModalStatus('Delivered', 'success')" title="Mark delivered only AFTER sending the completed video to the customer">
+                            <i class="bi bi-send-check me-1"></i> Mark Delivered
+                        </button>
                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="submitModalStatus('Cancelled', 'danger')">
                             <i class="bi bi-x-lg me-1"></i> Cancel
                         </button>
@@ -456,6 +460,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             document.getElementById('v_details_label').innerText = isCameo ? 'Requested Words / Script' : 'Event Details & Requirements';
             document.getElementById('v_details').innerText = isCameo ? (booking.cameo_script || '') : (booking.event_details || 'No additional details provided.');
             document.getElementById('v_delivery_block').style.display = isCameo ? '' : 'none';
+            document.getElementById('v_mark_delivered').style.display = isCameo ? '' : 'none';
             document.getElementById('v_delivery_email').innerText = isCameo ? (booking.delivery_email || '') : '';
             document.getElementById('v_delivery_whatsapp').innerText = isCameo ? (booking.delivery_whatsapp || '') : '';
             
@@ -464,7 +469,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             var statusText = document.getElementById('v_status_text');
             var badgeClass = 'bg-secondary';
             if (booking.status === 'Pending') badgeClass = 'bg-warning text-dark';
-            if (booking.status === 'Accepted') badgeClass = 'bg-success text-white';
+            if (['Accepted', 'Approved', 'Delivered'].includes(booking.status)) badgeClass = 'bg-success text-white';
             if (booking.status === 'Cancelled') badgeClass = 'bg-danger text-white';
             if (statusBadge) {
                 statusBadge.className = 'badge ' + badgeClass + ' px-3 py-1';
@@ -472,7 +477,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
             if (statusText) {
                 statusText.innerText = booking.status;
-                statusText.className = (booking.status === 'Accepted' ? 'text-success fw-bold' : (booking.status === 'Cancelled' ? 'text-danger fw-bold' : 'text-warning fw-bold'));
+                statusText.className = (['Accepted', 'Approved', 'Delivered'].includes(booking.status) ? 'text-success fw-bold' : (booking.status === 'Cancelled' ? 'text-danger fw-bold' : 'text-warning fw-bold'));
             }
 
             var modal = new bootstrap.Modal(document.getElementById('viewBookingModal'));
