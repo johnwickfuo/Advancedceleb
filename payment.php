@@ -15,13 +15,15 @@ $amount_due = 0.00;
 $currency_symbol = '$'; // Default
 $payment_status = '';
 $recipient_name = '';
+$is_cameo = false;
 
 // 2. Fetch Booking Data from the database
 if ($tracking_number) {
     try {
-        $sql = "SELECT id, amount, status, user_name 
-                FROM bookings 
-                WHERE booking_reference = :tracking_number";
+        $sql = "SELECT b.id, b.amount, b.status, b.user_name, b.booking_type, c.name AS celebrity_name
+                FROM bookings b
+                LEFT JOIN celebrities c ON c.id = b.celebrity_id
+                WHERE b.booking_reference = :tracking_number";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':tracking_number', $tracking_number);
         $stmt->execute();
@@ -30,12 +32,13 @@ if ($tracking_number) {
         if ($booking) {
             $booking_id = $booking['id'];
             $payment_status = $booking['status'];
+            $is_cameo = ($booking['booking_type'] ?? 'event') === 'cameo';
             
             // Calculate display variables
             $amount_due = number_format((float)$booking['amount'], 2);
             
-            $header_text = "INVOICE #{$tracking_number}";
-            $recipient_name = $booking['user_name'];
+            $header_text = $is_cameo ? "CAMEO VIDEO #{$tracking_number}" : "INVOICE #{$tracking_number}";
+            $recipient_name = $is_cameo ? ($booking['celebrity_name'] ?? 'Celebrity') : $booking['user_name'];
 
         } else {
             // No booking found for this reference
@@ -78,7 +81,7 @@ $is_donation = (strpos($tracking_number, 'DON-') === 0);
 <!DOCTYPE html>
 <html lang="en">
    <head>
-     <title><?php echo $header_text; ?> | <?php echo htmlspecialchars($site_settings['site_title'] ?? 'VIP Celebrity Bookings'); ?></title>
+     <title><?php echo htmlspecialchars($header_text, ENT_QUOTES, 'UTF-8'); ?> | <?php echo htmlspecialchars($site_settings['site_title'] ?? 'VIP Celebrity Bookings'); ?></title>
      <?php include "head.php"; ?>
     <style>
         .payment-hero {
@@ -158,17 +161,17 @@ $is_donation = (strpos($tracking_number, 'DON-') === 0);
       <section class="payment-hero shadow-lg">
         <div class="container">
             <p style="color: var(--secondary, #dfa92a) !important; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.25rem; font-size: 0.85rem;">
-                <?php echo $is_donation ? 'Charitable Donation Payment' : 'Secure Booking Payment'; ?>
+                <?php echo $is_donation ? 'Charitable Donation Payment' : ($is_cameo ? 'Cameo Video Payment' : 'Secure Booking Payment'); ?>
             </p>
-            <h1><?php echo $header_text; ?></h1>
+            <h1><?php echo htmlspecialchars($header_text, ENT_QUOTES, 'UTF-8'); ?></h1>
             <p class="subtitle mx-auto mb-3" style="max-width: 600px;">
-                <?php echo $is_donation ? 'Contribution by' : 'Booking for'; ?> <strong class="text-white"><?php echo htmlspecialchars($recipient_name ?? 'Client'); ?></strong>
+                <?php echo $is_donation ? 'Contribution by' : ($is_cameo ? 'Video request for' : 'Booking for'); ?> <strong class="text-white"><?php echo htmlspecialchars($recipient_name ?? 'Client'); ?></strong>
             </p>
             <div class="total-due">
                 TOTAL DUE: <?php echo format_currency((float)$booking['amount']); ?>
             </div>
             <p class="note mx-auto mb-3" style="max-width: 600px;">
-                <?php echo $is_donation ? 'Kindly select your payment option below to complete your generous contribution.' : 'Kindly proceed with payment to confirm your exclusive booking.'; ?>
+                <?php echo $is_donation ? 'Kindly select your payment option below to complete your generous contribution.' : ($is_cameo ? 'Choose a payment option and submit your payment proof. The request remains pending until verification.' : 'Kindly proceed with payment to confirm your exclusive booking.'); ?>
             </p>
             <div class="mt-3">
                 <a href="index.php" class="btn btn-sm rounded-pill px-4 py-2 fw-bold" style="border: 2px solid #c29b57; color: #c29b57; transition: all 0.3s; background: transparent; font-size: 0.85rem;" onmouseover="this.style.background='#c29b57'; this.style.color='#000';" onmouseout="this.style.background='transparent'; this.style.color='#c29b57';">
@@ -216,7 +219,7 @@ $is_donation = (strpos($tracking_number, 'DON-') === 0);
           <div class="container">
               <div class="mx-auto text-center mb-5" style="max-width: 600px;">
                   <h2 class="fw-bolder mb-1 text-dark">PAYMENT ROADMAP</h2>
-                  <p class="text-muted">A simple 4-step process to secure your exclusive booking.</p>
+                  <p class="text-muted">A simple 4-step process to <?php echo $is_cameo ? 'complete your cameo video request' : 'secure your exclusive booking'; ?>.</p>
               </div>
               
               <div class="row g-4 justify-content-center">
@@ -261,7 +264,7 @@ $is_donation = (strpos($tracking_number, 'DON-') === 0);
                               </span>
                           </div>
                           <h5 class="text-white">Booking Confirmed</h5>
-                          <p class="small text-muted">Once confirmed, your booking arrangement instantly proceeds</p>
+                          <p class="small text-muted"><?php echo $is_cameo ? 'After verification and talent approval, the video will be coordinated for delivery.' : 'Once confirmed, your booking arrangement proceeds'; ?></p>
                       </div>
                   </div>
               </div>
