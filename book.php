@@ -142,6 +142,15 @@ try {
     error_log("Error fetching celebrities: " . $e->getMessage());
 }
 
+// Only show cameo access when an admin has enabled at least one priced talent.
+$has_cameo_talent = false;
+foreach ($celebrities as $candidate) {
+    if ((int)($candidate['cameo_enabled'] ?? 0) === 1 && (float)($candidate['cameo_price'] ?? 0) > 0) {
+        $has_cameo_talent = true;
+        break;
+    }
+}
+
 // Pre-select celebrity if passed via GET
 $selected_cel_id = isset($_GET['celebrity_id']) ? (int)$_GET['celebrity_id'] : 0;
 $selected_cel_details = null;
@@ -267,6 +276,11 @@ if ($selected_cel_id > 0) {
                             
                             <button type="submit" name="submit_booking" class="btn btn-gold w-100 mt-4 py-3 fs-5" style="font-weight: 700; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(218,165,32,0.3);">Book Celebrity</button>
                         </form>
+                        <?php if ($has_cameo_talent): ?>
+                            <a href="cameo.php<?php echo ($selected_cel_details && (int)($selected_cel_details['cameo_enabled'] ?? 0) === 1) ? '?celebrity_id=' . (int)$selected_cel_details['id'] : ''; ?>" class="btn btn-outline-danger w-100 mt-3 py-3 fs-5 fw-bold">
+                                <i class="bi bi-camera-video me-2"></i>Request Cameo Video
+                            </a>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
