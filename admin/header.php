@@ -28,6 +28,7 @@ $menu_items = [
     'Platform' => [
         ['file' => 'celebrity_manager.php', 'icon' => 'bi-people-fill', 'label' => 'Celebrities'],
         ['file' => 'bookings_manager.php', 'icon' => 'bi-calendar-check', 'label' => 'Bookings'],
+        ['file' => 'bookings_manager.php?type=cameo', 'icon' => 'bi-camera-video-fill', 'label' => 'Cameo Requests'],
         ['file' => 'add_event.php', 'icon' => 'bi-calendar-event', 'label' => 'Add Event'],
         ['file' => 'messages.php', 'icon' => 'bi-chat-left-text-fill', 'label' => 'Messages'],
         ['file' => 'payment_proofs.php', 'icon' => 'bi-wallet2', 'label' => 'Payments'],
@@ -57,6 +58,14 @@ function render_menu($menu_items, $current_page) {
             
             $is_active = ($current_page == $file_base);
             
+            // Bookings and cameo requests share one page but have distinct sidebar links.
+            if ($is_active && $file_base === 'bookings_manager.php') {
+                parse_str($url_parts['query'] ?? '', $menu_query);
+                $target_type = $menu_query['type'] ?? 'all';
+                $current_type = $_GET['type'] ?? 'all';
+                $is_active = $target_type === $current_type;
+            }
+
             // If it's settings.php, check the tab parameter
             if ($is_active && $file_base == 'settings.php' && isset($url_parts['query'])) {
                 parse_str($url_parts['query'], $query_params);
