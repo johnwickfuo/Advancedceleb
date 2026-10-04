@@ -15,15 +15,6 @@ try {
     error_log("Error fetching featured celebrities: " . $e->getMessage());
 }
 
-// Fetch Fan Card Celebrities
-$fan_card_celebrities = [];
-try {
-    $stmt = $pdo->query("SELECT * FROM celebrities WHERE is_featured = 1 ORDER BY RAND() LIMIT 8");
-    $fan_card_celebrities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-    error_log("Error fetching fan card celebrities: " . $e->getMessage());
-}
-
 // Fetch Active Events
 $active_events = [];
 try {
@@ -463,107 +454,6 @@ try {
             </div>
         </div>
     </section>
-
-    <!-- Fan Cards Section -->
-    <section class="fan-card-container pt-4 pb-5" style="background-color: #faf8f5;">
-        <div class="container">
-            <div class="section-title text-center">
-                <p>Support Your Icons</p>
-                <h2>Fan Cards</h2>
-            </div>
-            
-            <div class="swiper fan-cards-slider">
-                <div class="swiper-wrapper">
-                    <?php if (count($fan_card_celebrities) > 0): ?>
-                        <?php foreach ($fan_card_celebrities as $cel): ?>
-                        <div class="swiper-slide">
-                            <div class="card premium-fan-card h-100 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;">
-                                <div class="fan-card-img-wrapper position-relative" style="height: 200px;">
-                                    <?php if ($cel['is_featured']): ?>
-                                    <span class="fan-card-badge position-absolute d-flex align-items-center" style="top: 15px; left: 15px; background-color: #daa520; color: #fff; padding: 4px 10px; font-size: 0.7rem; font-weight: 800; border-radius: 20px; text-transform: uppercase; letter-spacing: 1px; z-index: 2;"><i class="bi bi-patch-check-fill" style="color: #1877F2; background: white; border-radius: 50%; font-size: 0.85rem; margin-right: 5px; display: inline-flex; justify-content: center; align-items: center; width: 14px; height: 14px; line-height: 1;"></i>FEATURED</span>
-                                    <?php endif; ?>
-                                    <img src="<?php echo !empty($cel['profile_picture']) ? htmlspecialchars($cel['profile_picture']) : 'assets/img/perf_default.jpg'; ?>" alt="<?php echo htmlspecialchars($cel['name']); ?>" style="width: 100%; height: 100%; object-fit: cover; object-position: center top;" onerror="this.src='assets/img/perf_default.jpg';">
-                                    <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 45%; background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%); z-index: 2; pointer-events: none;"></div>
-                                </div>
-                                <div class="card-body p-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <h5 class="fan-card-title fw-bold text-dark mb-0" style="font-family: 'Playfair Display', serif; font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><?php echo htmlspecialchars($cel['name']); ?></h5>
-                                    </div>
-                                    <div class="fan-card-location text-muted" style="font-size: 0.85rem; margin-bottom: 8px;"><i class="bi bi-geo-alt me-1"></i>United States</div>
-                                    <div class="fan-card-price fw-bold" style="color: #b00000; font-size: 0.95rem; margin-bottom: 15px;"><i class="bi bi-tags me-1"></i><?php echo format_currency($cel['booking_price']); ?></div>
-                                    
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-6">
-                                            <a href="book.php?celebrity_id=<?php echo $cel['id']; ?>" class="btn w-100 d-flex align-items-center justify-content-center" style="background-color: #b00000; color: white; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 700; padding: 8px 0; transition: background 0.2s;"><i class="bi bi-calendar3 me-2"></i> Book Now</a>
-                                        </div>
-                                        <div class="col-6">
-                                            <a href="donation.php" class="btn w-100 d-flex align-items-center justify-content-center" style="background-color: #daa520; color: white; border: none; border-radius: 6px; font-size: 0.85rem; font-weight: 700; padding: 8px 0; transition: background 0.2s;"><i class="bi bi-heart me-2"></i> Donate</a>
-                                        </div>
-                                    </div>
-                                    <a href="book.php?celebrity_id=<?php echo $cel['id']; ?>" class="btn w-100 d-flex align-items-center justify-content-center" style="background-color: transparent; color: #b00000; border: 1px solid #b00000; border-radius: 6px; font-size: 0.85rem; font-weight: 700; padding: 8px 0; transition: all 0.2s;" onmouseover="this.style.backgroundColor='#b00000'; this.style.color='white';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#b00000';"><i class="bi bi-person-vcard me-2"></i> Fan Card</a>
-                                </div>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </div>
-                <!-- Add Navigation -->
-                <div class="swiper-button-next" style="color: #b00000;"></div>
-                <div class="swiper-button-prev" style="color: #b00000;"></div>
-            </div>
-
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    new Swiper('.fan-cards-slider', {
-                        slidesPerView: 1,
-                        spaceBetween: 20,
-                        loop: true,
-                        autoplay: {
-                            delay: 2500,
-                            disableOnInteraction: false,
-                            pauseOnMouseEnter: true,
-                        },
-                        speed: 1000, /* Smooth transition between slides */
-                        grabCursor: true,
-                        navigation: {
-                            nextEl: '.swiper-button-next',
-                            prevEl: '.swiper-button-prev',
-                        },
-                        breakpoints: {
-                            576: { slidesPerView: 2, spaceBetween: 20 },
-                            768: { slidesPerView: 3, spaceBetween: 24 },
-                            1024: { slidesPerView: 4, spaceBetween: 24 }
-                        }
-                    });
-                });
-            </script>
-            <style>
-                .fan-cards-slider {
-                    padding-bottom: 20px;
-                }
-                .fan-cards-slider .swiper-button-next,
-                .fan-cards-slider .swiper-button-prev {
-                    top: 40%;
-                    width: 40px;
-                    height: 40px;
-                    background: rgba(255, 255, 255, 0.9);
-                    border-radius: 50%;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-                }
-                .fan-cards-slider .swiper-button-next::after,
-                .fan-cards-slider .swiper-button-prev::after {
-                    font-size: 1.2rem;
-                    font-weight: bold;
-                }
-                .fan-cards-slider .swiper-button-next:hover,
-                .fan-cards-slider .swiper-button-prev:hover {
-                    background: #b00000;
-                    color: white !important;
-                }
-            </style>
-        </div>
-    </section>
-
 
     <!-- VIP Concierge Services Section -->
     <style>
