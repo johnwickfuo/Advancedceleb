@@ -121,7 +121,6 @@ if (!isset($use_logo) || !isset($logo_path)) {
                     <li><a href="about.php" class="text-decoration-none" style="color: #ced4da; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ced4da'">About Us</a></li>
                     <li><a href="services.php" class="text-decoration-none" style="color: #ced4da; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ced4da'">Services</a></li>
                     <li><a href="performers.php" class="text-decoration-none" style="color: #ced4da; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ced4da'">Performers</a></li>
-                    <li><a href="fan_cards.php" class="text-decoration-none" style="color: #ced4da; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ced4da'">Fan Cards</a></li>
                     <li><a href="contact.php" class="text-decoration-none" style="color: #ced4da; transition: color 0.3s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#ced4da'">Contact</a></li>
                 </ul>
             </div>

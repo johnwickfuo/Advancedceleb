@@ -208,6 +208,9 @@ try {
                                 <div class="cel-price">Starts at <?php echo format_currency($cel['booking_price']); ?></div>
                                 <p class="cel-desc"><?php echo htmlspecialchars($cel['description']); ?></p>
                                 <a href="book.php?celebrity_id=<?php echo $cel['id']; ?>" class="btn btn-gold w-100 py-2"><i class="bi bi-calendar-check me-2"></i>Book <?php echo htmlspecialchars(explode(' ', trim($cel['name']))[0]); ?></a>
+                                <a href="cameo.php?celebrity_id=<?php echo (int)$cel['id']; ?>" class="btn btn-outline-danger w-100 py-2 mt-2 fw-bold">
+                                    <i class="bi bi-camera-video me-2"></i>Request Cameo Video<?php if (isset($cel['cameo_price']) && (float)$cel['cameo_price'] > 0): ?> — <?php echo format_currency($cel['cameo_price']); ?><?php endif; ?>
+                                </a>
                             </div>
                         </div>
                     </div>

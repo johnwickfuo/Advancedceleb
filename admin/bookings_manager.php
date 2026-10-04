@@ -35,21 +35,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     require_once '../include/email_core_functions.php';
                     $smtp_config_missing = false;
                     
+                    $service_label = ($booking['booking_type'] ?? 'event') === 'cameo' ? 'Cameo Request' : 'Booking';
+                    $service_description = ($booking['booking_type'] ?? 'event') === 'cameo' ? 'cameo video' : 'celebrity booking';
                     if ($status === 'Accepted') {
-                        $subj = "Booking Accepted - Ref: " . $booking['booking_reference'];
+                        $subj = $service_label . " Accepted - Ref: " . $booking['booking_reference'];
                         $body = "
                             <h2 style='color: #e63946; margin-top: 0;'>Booking Accepted!</h2>
                             <p>Great news, {$booking['user_name']}!</p>
-                            <p>Your booking request for <strong>{$booking['celebrity_name']}</strong> has been <strong>ACCEPTED</strong>.</p>
+                            <p>Your {$service_description} request for <strong>{$booking['celebrity_name']}</strong> has been <strong>ACCEPTED</strong>.</p>
                             <p>Please proceed to track your booking and complete your payment to finalize the arrangement.</p>
                             <p><a href='{$site_settings['site_url']}/payment.php?ref={$booking['booking_reference']}' style='display: inline-block; padding: 10px 20px; background-color: #e63946; color: #fff; border-radius: 6px; font-weight: bold;'>Complete Payment Now</a></p>
                         ";
                     } else {
-                        $subj = "Booking Cancelled - Ref: " . $booking['booking_reference'];
+                        $subj = $service_label . " Cancelled - Ref: " . $booking['booking_reference'];
                         $body = "
                             <h2 style='color: #e63946; margin-top: 0;'>Booking Cancelled</h2>
                             <p>Dear {$booking['user_name']},</p>
-                            <p>We regret to inform you that your booking request for <strong>{$booking['celebrity_name']}</strong> has been cancelled.</p>
+                            <p>We regret to inform you that your {$service_description} request for <strong>{$booking['celebrity_name']}</strong> has been cancelled.</p>
                             <p>If you have any questions, please contact our support team.</p>
                         ";
                     }
@@ -99,19 +101,33 @@ $page = isset($_GET['page']) && is_numeric($_GET['page']) ? (int)$_GET['page'] :
 $page = max(1, $page);
 $offset = ($page - 1) * $limit;
 
-// Count total records
-$total_stmt = $pdo->query("SELECT COUNT(*) FROM bookings");
-$total_records = $total_stmt->fetchColumn();
-$total_pages = ceil($total_records / $limit);
+// Filter cameo requests separately without hiding existing event bookings.
+$view_type = $_GET['type'] ?? 'all';
+if (!in_array($view_type, ['all', 'event', 'cameo'], true)) {
+    $view_type = 'all';
+}
+$filter_sql = $view_type === 'all' ? '' : ' WHERE booking_type = :booking_type';
+$total_stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings" . $filter_sql);
+if ($view_type !== 'all') {
+    $total_stmt->bindValue(':booking_type', $view_type);
+}
+$total_stmt->execute();
+$total_records = (int)$total_stmt->fetchColumn();
+$total_pages = (int)ceil($total_records / $limit);
 
-// Fetch Bookings with Celebrity Info
+// Fetch bookings with celebrity and cameo information.
+$booking_filter_sql = $view_type === 'all' ? '' : ' WHERE b.booking_type = :booking_type';
 $stmt = $pdo->prepare("
-    SELECT b.*, c.name as celebrity_name, c.profile_picture 
+    SELECT b.*, c.name as celebrity_name, c.profile_picture
     FROM bookings b
     LEFT JOIN celebrities c ON b.celebrity_id = c.id
+    " . $booking_filter_sql . "
     ORDER BY b.created_at DESC
     LIMIT :limit OFFSET :offset
 ");
+if ($view_type !== 'all') {
+    $stmt->bindValue(':booking_type', $view_type);
+}
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
 $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
@@ -145,7 +161,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
         
         <div class="main-content-wrapper p-4">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="h3 mb-0 text-gray-800"><i class="bi bi-calendar-check text-primary me-2"></i>Manage Bookings</h2>
+                <h2 class="h3 mb-0 text-gray-800"><i class="bi bi-calendar-check text-primary me-2"></i><?php echo $view_type === 'cameo' ? 'Cameo Requests' : 'Manage Bookings'; ?></h2>
             </div>
             
             <?php if($success_msg): ?>
@@ -155,6 +171,11 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="alert alert-danger shadow-sm rounded-3"><i class="bi bi-exclamation-triangle me-2"></i><?php echo $error_msg; ?></div>
             <?php endif; ?>
             
+            <div class="d-flex gap-2 flex-wrap mb-3" aria-label="Booking filters">
+                <a class="btn btn-sm <?php echo $view_type === 'all' ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="bookings_manager.php">All Orders</a>
+                <a class="btn btn-sm <?php echo $view_type === 'event' ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="bookings_manager.php?type=event">Celebrity Bookings</a>
+                <a class="btn btn-sm <?php echo $view_type === 'cameo' ? 'btn-primary' : 'btn-outline-secondary'; ?>" href="bookings_manager.php?type=cameo">Cameo Videos</a>
+            </div>
             <div class="card card-custom">
                 <div class="card-body p-0">
                     <!-- Desktop Table View -->
@@ -164,7 +185,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 <tr>
                                     <th class="ps-4">Celebrity</th>
                                     <th>Client</th>
-                                    <th>Event Date</th>
+                                    <th>Event / Order Date</th>
                                     <th>Amount</th>
                                     <th>Status</th>
                                     <th class="text-end pe-4">Actions</th>
@@ -183,27 +204,36 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                             <i class="bi bi-person-fill fs-5"></i>
                                                         </div>
                                                     <?php endif; ?>
-                                                    <span><?php echo htmlspecialchars($booking['celebrity_name'] ?? 'Celebrity'); ?></span>
+                                                    <span>
+                                                        <?php echo htmlspecialchars($booking['celebrity_name'] ?? 'Celebrity'); ?>
+                                                        <?php if (($booking['booking_type'] ?? 'event') === 'cameo'): ?>
+                                                            <span class="badge bg-info text-dark d-block mt-1">Cameo Video</span>
+                                                        <?php endif; ?>
+                                                    </span>
                                                 </div>
                                             </td>
                                             <td>
                                                 <div><?php echo htmlspecialchars($booking['user_name']); ?></div>
                                                 <small class="text-muted"><?php echo htmlspecialchars($booking['user_email']); ?></small>
                                             </td>
-                                            <td><?php echo date('M d, Y', strtotime($booking['event_date'])); ?></td>
+                                            <td>
+                                                <?php echo date('M d, Y', strtotime(($booking['booking_type'] ?? 'event') === 'cameo' ? $booking['created_at'] : $booking['event_date'])); ?>
+                                                <?php if (($booking['booking_type'] ?? 'event') === 'cameo'): ?><small class="d-block text-muted">Ordered</small><?php endif; ?>
+                                            </td>
                                             <td><?php echo format_currency($booking['amount']); ?></td>
                                             <td>
                                                 <?php 
                                                 $badgeClass = 'bg-secondary';
                                                 if($booking['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
-                                                if($booking['status'] == 'Accepted') $badgeClass = 'bg-success';
+                                                if(in_array($booking['status'], ['Accepted', 'Approved', 'Delivered'], true)) $badgeClass = 'bg-success';
                                                 if($booking['status'] == 'Cancelled') $badgeClass = 'bg-danger';
                                                 ?>
                                                 <span class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($booking['status']); ?></span>
+                                                <small class="d-block mt-1 text-muted">Payment: <?php echo htmlspecialchars($booking['payment_status'] ?? 'Unpaid'); ?></small>
                                             </td>
                                             <td class="text-end pe-4 text-nowrap">
                                                 <div class="d-flex justify-content-end align-items-center gap-2">
-                                                    <button class="btn btn-sm btn-light border shadow-sm rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details & Manage Status">
+                                                    <button class="btn btn-sm btn-light border shadow-sm rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details & Manage Status">
                                                         <i class="bi bi-eye text-primary fs-6"></i>
                                                     </button>
                                                     <form method="post" class="m-0" onsubmit="confirmDelete(event, this);">
@@ -244,13 +274,14 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                                 <div>
                                                     <h6 class="mb-0 fw-bold text-dark"><?php echo htmlspecialchars($booking['celebrity_name'] ?? 'Celebrity'); ?></h6>
                                                     <small class="text-muted fw-semibold">#<?php echo htmlspecialchars($booking['booking_reference']); ?></small>
+                                                    <?php if (($booking['booking_type'] ?? 'event') === 'cameo'): ?><span class="badge bg-info text-dark d-block mt-1">Cameo Video</span><?php endif; ?>
                                                 </div>
                                             </div>
                                             <div>
                                                 <?php 
                                                 $badgeClass = 'bg-secondary';
                                                 if($booking['status'] == 'Pending') $badgeClass = 'bg-warning text-dark';
-                                                if($booking['status'] == 'Accepted') $badgeClass = 'bg-success';
+                                                if(in_array($booking['status'], ['Accepted', 'Approved', 'Delivered'], true)) $badgeClass = 'bg-success';
                                                 if($booking['status'] == 'Cancelled') $badgeClass = 'bg-danger';
                                                 ?>
                                                 <span class="badge <?php echo $badgeClass; ?> px-2 py-1"><?php echo htmlspecialchars($booking['status']); ?></span>
@@ -265,8 +296,8 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                             </div>
                                             <div class="d-flex justify-content-between">
                                                 <div>
-                                                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Event Date</small>
-                                                    <div class="fw-bold text-dark"><?php echo date('M d, Y', strtotime($booking['event_date'])); ?></div>
+                                                    <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;"><?php echo ($booking['booking_type'] ?? 'event') === 'cameo' ? 'Order Date' : 'Event Date'; ?></small>
+                                                    <div class="fw-bold text-dark"><?php echo date('M d, Y', strtotime(($booking['booking_type'] ?? 'event') === 'cameo' ? $booking['created_at'] : $booking['event_date'])); ?></div>
                                                 </div>
                                                 <div class="text-end">
                                                     <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Amount</small>
@@ -277,7 +308,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                         
                                         <!-- Actions -->
                                         <div class="d-flex justify-content-between align-items-center mt-2">
-                                            <button class="btn btn-light border shadow-sm rounded-pill px-3 py-2 d-flex align-items-center justify-content-center flex-grow-1 me-2 fw-semibold text-primary" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details">
+                                            <button class="btn btn-light border shadow-sm rounded-pill px-3 py-2 d-flex align-items-center justify-content-center flex-grow-1 me-2 fw-semibold text-primary" onclick='viewBooking(<?php echo htmlspecialchars(json_encode($booking, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT), ENT_QUOTES, 'UTF-8'); ?>)' title="View Details">
                                                 <i class="bi bi-eye me-2"></i> View Details & Status
                                             </button>
                                             <form method="post" class="m-0" onsubmit="confirmDelete(event, this);">
@@ -303,15 +334,15 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <nav aria-label="Page navigation">
                             <ul class="pagination justify-content-center mb-0">
                                 <li class="page-item <?php echo $page <= 1 ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page - 1; ?>">Previous</a>
+                                    <a class="page-link" href="?type=<?php echo urlencode($view_type); ?>&amp;page=<?php echo $page - 1; ?>">Previous</a>
                                 </li>
                                 <?php for($i = 1; $i <= $total_pages; $i++): ?>
                                     <li class="page-item <?php echo $page == $i ? 'active' : ''; ?>">
-                                        <a class="page-link" href="?page=<?php echo $i; ?>"><?php echo $i; ?></a>
+                                        <a class="page-link" href="?type=<?php echo urlencode($view_type); ?>&amp;page=<?php echo $i; ?>"><?php echo $i; ?></a>
                                     </li>
                                 <?php endfor; ?>
                                 <li class="page-item <?php echo $page >= $total_pages ? 'disabled' : ''; ?>">
-                                    <a class="page-link" href="?page=<?php echo $page + 1; ?>">Next</a>
+                                    <a class="page-link" href="?type=<?php echo urlencode($view_type); ?>&amp;page=<?php echo $page + 1; ?>">Next</a>
                                 </li>
                             </ul>
                         </nav>
@@ -348,8 +379,8 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </div>
                         <div class="col-md-6">
                             <div class="p-3 bg-light rounded-3 h-100 border">
-                                <small class="text-uppercase text-muted fw-bold mb-2 d-block" style="font-size: 0.75rem;">Event Information</small>
-                                <div class="mb-1"><strong>Date:</strong> <span id="v_date" class="fw-semibold text-dark"></span></div>
+                                <small class="text-uppercase text-muted fw-bold mb-2 d-block" id="v_info_heading" style="font-size: 0.75rem;">Event Information</small>
+                                <div class="mb-1"><strong id="v_date_label">Date:</strong> <span id="v_date" class="fw-semibold text-dark"></span></div>
                                 <div class="mb-1"><strong>Event Type:</strong> <span id="v_type" class="badge bg-secondary"></span></div>
                                 <div><strong>Current Status:</strong> <span id="v_status_text" class="fw-bold"></span></div>
                             </div>
@@ -364,9 +395,16 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12" id="v_delivery_block" style="display:none;">
+                            <div class="p-3 border rounded-3" style="background:#fff9e9;">
+                                <small class="text-uppercase text-muted fw-bold d-block mb-2">Completed Video Delivery</small>
+                                <div><strong>Email:</strong> <span id="v_delivery_email" class="text-break"></span></div>
+                                <div><strong>WhatsApp:</strong> <span id="v_delivery_whatsapp"></span></div>
+                            </div>
+                        </div>
                         <div class="col-12">
                             <div class="p-3 bg-light rounded-3 border">
-                                <small class="text-uppercase text-muted fw-bold mb-2 d-block" style="font-size: 0.75rem;">Event Details & Requirements</small>
+                                <small class="text-uppercase text-muted fw-bold mb-2 d-block" id="v_details_label" style="font-size: 0.75rem;">Event Details & Requirements</small>
                                 <p id="v_details" class="mb-0 text-break text-muted"></p>
                             </div>
                         </div>
@@ -384,6 +422,9 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         </button>
                         <button type="button" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" onclick="submitModalStatus('Accepted', 'success')">
                             <i class="bi bi-check-lg me-1"></i> Accept
+                        </button>
+                        <button type="button" id="v_mark_delivered" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold" style="display:none;" onclick="submitModalStatus('Delivered', 'success')" title="Mark delivered only AFTER sending the completed video to the customer">
+                            <i class="bi bi-send-check me-1"></i> Mark Delivered
                         </button>
                         <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="submitModalStatus('Cancelled', 'danger')">
                             <i class="bi bi-x-lg me-1"></i> Cancel
@@ -408,19 +449,27 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 document.getElementById('v_cel_avatar').innerHTML = '<div class="cel-thumb text-white d-flex align-items-center justify-content-center shadow-sm" style="width:40px; height:40px; border-radius:8px; background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%) !important;"><i class="bi bi-person-fill fs-5"></i></div>';
             }
             document.getElementById('v_amount').innerText = Number(booking.amount).toLocaleString('en-US');
-            document.getElementById('v_date').innerText = booking.event_date;
-            document.getElementById('v_type').innerText = booking.event_type || 'N/A';
+            var isCameo = booking.booking_type === 'cameo';
+            document.getElementById('v_info_heading').innerText = isCameo ? 'Cameo Request Information' : 'Event Information';
+            document.getElementById('v_date_label').innerText = isCameo ? 'Ordered:' : 'Date:';
+            document.getElementById('v_date').innerText = isCameo ? booking.created_at : booking.event_date;
+            document.getElementById('v_type').innerText = isCameo ? 'Cameo Video' : (booking.event_type || 'N/A');
             document.getElementById('v_client_name').innerText = booking.user_name;
             document.getElementById('v_email').innerText = booking.user_email;
             document.getElementById('v_phone').innerText = booking.user_phone;
-            document.getElementById('v_details').innerText = booking.event_details || 'No additional details provided.';
+            document.getElementById('v_details_label').innerText = isCameo ? 'Requested Words / Script' : 'Event Details & Requirements';
+            document.getElementById('v_details').innerText = isCameo ? (booking.cameo_script || '') : (booking.event_details || 'No additional details provided.');
+            document.getElementById('v_delivery_block').style.display = isCameo ? '' : 'none';
+            document.getElementById('v_mark_delivered').style.display = isCameo ? '' : 'none';
+            document.getElementById('v_delivery_email').innerText = isCameo ? (booking.delivery_email || '') : '';
+            document.getElementById('v_delivery_whatsapp').innerText = isCameo ? (booking.delivery_whatsapp || '') : '';
             
             // Status Badge & Text in Modal
             var statusBadge = document.getElementById('v_status_badge');
             var statusText = document.getElementById('v_status_text');
             var badgeClass = 'bg-secondary';
             if (booking.status === 'Pending') badgeClass = 'bg-warning text-dark';
-            if (booking.status === 'Accepted') badgeClass = 'bg-success text-white';
+            if (['Accepted', 'Approved', 'Delivered'].includes(booking.status)) badgeClass = 'bg-success text-white';
             if (booking.status === 'Cancelled') badgeClass = 'bg-danger text-white';
             if (statusBadge) {
                 statusBadge.className = 'badge ' + badgeClass + ' px-3 py-1';
@@ -428,7 +477,7 @@ $bookings = $stmt->fetchAll(PDO::FETCH_ASSOC);
             }
             if (statusText) {
                 statusText.innerText = booking.status;
-                statusText.className = (booking.status === 'Accepted' ? 'text-success fw-bold' : (booking.status === 'Cancelled' ? 'text-danger fw-bold' : 'text-warning fw-bold'));
+                statusText.className = (['Accepted', 'Approved', 'Delivered'].includes(booking.status) ? 'text-success fw-bold' : (booking.status === 'Cancelled' ? 'text-danger fw-bold' : 'text-warning fw-bold'));
             }
 
             var modal = new bootstrap.Modal(document.getElementById('viewBookingModal'));

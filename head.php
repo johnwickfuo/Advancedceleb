@@ -384,7 +384,7 @@
     }
     
     /* Universal Page Header & Heroes */
-    .page-header, .about-hero, .services-hero, .performers-hero, .donation-hero, .contact-hero, .booking-hero, .book-hero, .fancards-hero, .lookup-hero, .ticket-view-hero, .terms-hero, .privacy-hero, .tickets-hero, .premium-hero { 
+    .page-header, .about-hero, .services-hero, .performers-hero, .donation-hero, .contact-hero, .booking-hero, .book-hero, .lookup-hero, .ticket-view-hero, .terms-hero, .privacy-hero, .tickets-hero, .premium-hero { 
         background: url('assets/img/head_bg.jpg') center/cover no-repeat; 
         padding: 120px 0 65px; 
         text-align: center; 
@@ -392,18 +392,18 @@
         position: relative; 
         overflow: hidden; 
     }
-    .page-header::before, .about-hero::before, .services-hero::before, .performers-hero::before, .donation-hero::before, .contact-hero::before, .booking-hero::before, .book-hero::before, .fancards-hero::before, .lookup-hero::before, .ticket-view-hero::before, .terms-hero::before, .privacy-hero::before, .tickets-hero::before {
+    .page-header::before, .about-hero::before, .services-hero::before, .performers-hero::before, .donation-hero::before, .contact-hero::before, .booking-hero::before, .book-hero::before::before, .lookup-hero::before, .ticket-view-hero::before, .terms-hero::before, .privacy-hero::before, .tickets-hero::before {
         content: '';
         position: absolute;
         top: 0; left: 0; width: 100%; height: 100%;
         background: linear-gradient(135deg, rgba(176,0,0,0.92) 0%, rgba(30,60,114,0.85) 100%);
         z-index: 1;
     }
-    .page-header .container, .about-hero .container, .services-hero .container, .performers-hero .container, .donation-hero .container, .contact-hero .container, .booking-hero .container, .book-hero .container, .fancards-hero .container, .lookup-hero .container, .ticket-view-hero .container, .terms-hero .container, .privacy-hero .container, .tickets-hero .container, .premium-hero .container { 
+    .page-header .container, .about-hero .container, .services-hero .container, .performers-hero .container, .donation-hero .container, .contact-hero .container, .booking-hero .container, .book-hero .container .container, .lookup-hero .container, .ticket-view-hero .container, .terms-hero .container, .privacy-hero .container, .tickets-hero .container, .premium-hero .container { 
         position: relative; 
         z-index: 2; 
     }
-    .page-header h1, .about-hero h1, .services-hero h1, .performers-hero h1, .donation-hero h1, .contact-hero h1, .booking-hero h1, .book-hero h1, .fancards-hero h1, .lookup-hero h1, .ticket-view-hero h1, .terms-hero h1, .privacy-hero h1, .tickets-hero h1, .premium-hero h1 { 
+    .page-header h1, .about-hero h1, .services-hero h1, .performers-hero h1, .donation-hero h1, .contact-hero h1, .booking-hero h1, .book-hero h1 h1, .lookup-hero h1, .ticket-view-hero h1, .terms-hero h1, .privacy-hero h1, .tickets-hero h1, .premium-hero h1 { 
         font-size: clamp(2rem, 5vw, 3.5rem) !important; 
         font-weight: 800 !important; 
         margin-bottom: 10px !important; 
@@ -412,7 +412,7 @@
         color: #fff !important;
         line-height: 1.2 !important;
     }
-    .page-header p, .about-hero p, .services-hero p, .performers-hero p, .donation-hero p, .contact-hero p, .booking-hero p, .book-hero p, .fancards-hero p, .lookup-hero p, .ticket-view-hero p, .terms-hero p, .privacy-hero p, .tickets-hero p, .premium-hero p { 
+    .page-header p, .about-hero p, .services-hero p, .performers-hero p, .donation-hero p, .contact-hero p, .booking-hero p, .book-hero p p, .lookup-hero p, .ticket-view-hero p, .terms-hero p, .privacy-hero p, .tickets-hero p, .premium-hero p { 
         font-size: 1.15rem; 
         color: rgba(255,255,255,0.9); 
         max-width: 720px;
@@ -421,15 +421,15 @@
     }
 
     @media (max-width: 767.98px) {
-        .page-header, .about-hero, .services-hero, .performers-hero, .donation-hero, .contact-hero, .booking-hero, .book-hero, .fancards-hero, .lookup-hero, .ticket-view-hero, .terms-hero, .privacy-hero, .tickets-hero, .premium-hero { 
+        .page-header, .about-hero, .services-hero, .performers-hero, .donation-hero, .contact-hero, .booking-hero, .book-hero, .lookup-hero, .ticket-view-hero, .terms-hero, .privacy-hero, .tickets-hero, .premium-hero { 
             padding: 85px 15px 35px !important; 
         }
-        .page-header h1, .about-hero h1, .services-hero h1, .performers-hero h1, .donation-hero h1, .contact-hero h1, .booking-hero h1, .book-hero h1, .fancards-hero h1, .lookup-hero h1, .ticket-view-hero h1, .terms-hero h1, .privacy-hero h1, .tickets-hero h1, .premium-hero h1 { 
+        .page-header h1, .about-hero h1, .services-hero h1, .performers-hero h1, .donation-hero h1, .contact-hero h1, .booking-hero h1, .book-hero h1 h1, .lookup-hero h1, .ticket-view-hero h1, .terms-hero h1, .privacy-hero h1, .tickets-hero h1, .premium-hero h1 { 
             font-size: 1.85rem !important; 
             margin-bottom: 8px !important; 
             letter-spacing: 0 !important;
         }
-        .page-header p, .about-hero p, .services-hero p, .performers-hero p, .donation-hero p, .contact-hero p, .booking-hero p, .book-hero p, .fancards-hero p, .lookup-hero p, .ticket-view-hero p, .terms-hero p, .privacy-hero p, .tickets-hero p, .premium-hero p { 
+        .page-header p, .about-hero p, .services-hero p, .performers-hero p, .donation-hero p, .contact-hero p, .booking-hero p, .book-hero p p, .lookup-hero p, .ticket-view-hero p, .terms-hero p, .privacy-hero p, .tickets-hero p, .premium-hero p { 
             font-size: 0.92rem !important; 
             line-height: 1.5 !important; 
             margin-bottom: 0 !important;

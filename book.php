@@ -267,6 +267,9 @@ if ($selected_cel_id > 0) {
                             
                             <button type="submit" name="submit_booking" class="btn btn-gold w-100 mt-4 py-3 fs-5" style="font-weight: 700; letter-spacing: 1px; box-shadow: 0 10px 20px rgba(218,165,32,0.3);">Book Celebrity</button>
                         </form>
+                        <a href="cameo.php<?php echo $selected_cel_details ? '?celebrity_id=' . (int)$selected_cel_details['id'] : ''; ?>" class="btn btn-outline-danger w-100 mt-3 py-3 fs-5 fw-bold">
+                            <i class="bi bi-camera-video me-2"></i>Request Cameo Video
+                        </a>
                     </div>
                 </div>
             </div>
